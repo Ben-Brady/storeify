@@ -46,4 +46,4 @@ testpaths = [
 warn_return_any = true
 warn_unused_configs = true
 strict = true
-files = ["mediaify/**"]
+files = ["storeify/**"]
