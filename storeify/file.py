@@ -1,34 +1,54 @@
-from .base import Store
+from . import Store, shared
 from pathlib import Path
+from io import BytesIO
+from base64 import b64encode, b64decode
 
 
 class FileStore(Store):
-    _path: Path
+    _store_dir: Path
 
     def __init__(self, directory: "str | Path"):
-        self._path = Path(directory)
-        self._path.mkdir(parents=True, exist_ok=True)
+        self._store_dir = Path(directory)
+        if not self._store_dir.is_dir():
+            raise NotADirectoryError(f"{directory} is not a directory")
 
-    def put(self, filename: str, data: bytes):
-        path = self._generate_filepath(filename)
+        self._store_dir.mkdir(parents=True, exist_ok=True)
+
+
+    def create(self, data: "bytes|BytesIO") -> str:
+        return shared.generic_create_file(self, data)
+
+
+    def get(self, key: str) -> BytesIO:
+        path = self._generate_path(key)
+        data = path.read_bytes()
+        return BytesIO(data)
+
+
+    def put(self, key: str, data: "bytes|BytesIO", *, upsert: bool = False):
+        shared.assert_not_exists(self, key, upsert)
+        data = shared.convert_to_bytes(data)
+        path = self._generate_path(key)
         path.write_bytes(data)
 
-    def get(self, filename: str) -> bytes:
-        path = self._generate_filepath(filename)
-        return path.read_bytes()
 
-    def delete(self, filename: str):
-        path = self._generate_filepath(filename)
-        path.unlink(missing_ok=True)
-
-    def exists(self, filename: str) -> bool:
-        path = self._generate_filepath(filename)
+    def exists(self, key: str) -> bool:
+        path = self._generate_path(key)
         return path.exists()
 
-    def _generate_filepath(self, filename: str) -> Path:
-        filename = encode(filename)
-        return Path(self._path, filename)
+
+    def delete(self, key: str):
+        path = self._generate_path(key)
+        path.unlink(missing_ok=True)
 
 
-def encode(filename: str) -> str:
-    return filename
+    def list(self) -> list[str]:
+        return [
+            b64decode(path.name).decode()
+            for path in self._store_dir.iterdir()
+        ]
+
+
+    def _generate_path(self, filename: str) -> Path:
+        filename = b64encode(filename.encode()).decode()
+        return Path(self._store_dir, filename)

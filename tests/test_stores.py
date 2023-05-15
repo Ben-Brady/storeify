@@ -1,4 +1,4 @@
-from storeify import Store, MemoryStore, FileStore, RedisStore, S3StoreCDN
+from storeify import Store, MemoryStore, FileStore, generate_valid_key
 import pytest
 
 stores = [
@@ -7,16 +7,20 @@ stores = [
 ]
 get_class_name = lambda store: store.__class__.__name__
 
+
 @pytest.mark.parametrize("store", stores, ids=get_class_name)
 def test_put(store: Store):
-    store.put("test.txt", b"hello world")
-    assert store.exists("test.txt")
-    assert store.get("test.txt") == b"hello world"
+    key = generate_valid_key(store)
+    store.put(key, b"hello world")
+    assert store.exists(key)
+    data = store.get(key).read()
+    assert data == b"hello world"
 
 
 @pytest.mark.parametrize("store", stores, ids=get_class_name)
 def test_delete(store: Store):
-    store.put("test.txt", b"hello world")
-    assert store.exists("test.txt")
-    store.delete("test.txt")
-    assert not store.exists("test.txt")
+    key = generate_valid_key(store)
+    store.put(key, b"hello world")
+    assert store.exists(key)
+    store.delete(key)
+    assert not store.exists(key)
