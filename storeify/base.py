@@ -6,41 +6,45 @@ from abc import ABC, abstractmethod
 
 
 class BasicStore(ABC):
+    """
+    A basic store that has no control over the allocation of keys
+    """
     @abstractmethod
     def create(self, data: "bytes|BytesIO") -> str:
         """_description_
 
         Args:
-            data (bytes|BytesIO): _description_
+            data (bytes|BytesIO): The data to store
 
         Raises:
-            CreationError: _description_
-            OutOfSpace: _description_
+            CreationError: Unable to create file
+            OutOfSpace: Store is out of space
 
         Returns:
-            str: _description_
+            str: The key of the created file
         """
         ...
 
 
     @abstractmethod
     def get(self, key: str) -> BytesIO:
-        """_description_
+        """Retrieve the data stored under a key
 
         Args:
-            key (str): _description_
+            key (str): The key of the file to retrieve
 
         Raises:
-            FileNotFoundError: _description_
+            FileNotFoundError: The file does not exist
 
         Returns:
-            str: _description_
+            BytesIO: The data stored under the key
         """
         ...
 
 
 class Store(BasicStore):
     """
+    A more advanced store that allows for more control over the data
     - Stores may encode keys, however they should be decoded when returned to the user
     """
     @abstractmethod
@@ -101,9 +105,9 @@ class CDNStore(ABC):
         """Generates a publicly accessible URL for a file
 
         Args:
-            filename (str): _description_
+            key (str): The key of the file to generate a URL for
 
         Returns:
-            str: _description_
+            str: The URL
         """
         ...
